@@ -11,7 +11,7 @@ const firebaseConfig = {
 const hasFirebaseConfig = Object.values(firebaseConfig).every(Boolean)
 
 const app = hasFirebaseConfig
-  ? getApps()[0] ?? initializeApp(firebaseConfig)
+  ? (getApps()[0] ?? initializeApp(firebaseConfig))
   : null
 
 export const auth = app ? getAuth(app) : null

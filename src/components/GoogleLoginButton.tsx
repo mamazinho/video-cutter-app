@@ -13,7 +13,11 @@ export function GoogleLoginButton() {
     try {
       await signInWithGoogle()
     } catch (loginError) {
-      setError(loginError.message || 'Google login failed. Please try again.')
+      setError(
+        loginError instanceof Error
+          ? loginError.message
+          : 'Google login failed. Please try again.',
+      )
     } finally {
       setIsLoading(false)
     }

@@ -1,4 +1,9 @@
-export function CreditsCard({ balance, loading }) {
+interface CreditsCardProps {
+  balance: number
+  loading: boolean
+}
+
+export function CreditsCard({ balance, loading }: CreditsCardProps) {
   return (
     <section className="card">
       <h2>Credits</h2>

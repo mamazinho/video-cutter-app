@@ -4,19 +4,22 @@ import { apiClient, ApiError } from '../api/client'
 import { CreditsCard } from '../components/CreditsCard'
 import { JobsList } from '../components/JobsList'
 import { UploadForm } from '../components/UploadForm'
+import type { UploadFormValues } from '../components/UploadForm'
 import { useAuth } from '../context/useAuth'
+import type { CreditPackage, Job } from '../types'
+import type { JobsListResponse } from '../api/client'
 
-const CREDIT_PACKAGES = [
+const CREDIT_PACKAGES: CreditPackage[] = [
   { label: '3 credits', credits: 3, price: 'R$ 30' },
   { label: '10 credits', credits: 10, price: 'R$ 100' },
   { label: '30 credits', credits: 30, price: 'R$ 300' },
 ]
 
-function normalizeJobs(payload) {
+function normalizeJobs(payload: JobsListResponse | null | undefined): Job[] {
   if (!payload) return []
   if (Array.isArray(payload)) return payload
-  if (Array.isArray(payload.items)) return payload.items
-  if (Array.isArray(payload.jobs)) return payload.jobs
+  if ('items' in payload && Array.isArray(payload.items)) return payload.items ?? []
+  if ('jobs' in payload && Array.isArray(payload.jobs)) return payload.jobs ?? []
   return []
 }
 
@@ -24,13 +27,13 @@ export function Dashboard() {
   const navigate = useNavigate()
   const { profile, apiToken } = useAuth()
   const [balance, setBalance] = useState(0)
-  const [jobs, setJobs] = useState([])
+  const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [isSubmittingUpload, setIsSubmittingUpload] = useState(false)
-  const [purchaseLoadingCredits, setPurchaseLoadingCredits] = useState(null)
+  const [purchaseLoadingCredits, setPurchaseLoadingCredits] = useState<number | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
 
-  const userName = useMemo(() => profile?.name || profile?.email || 'User', [profile])
+  const userName = useMemo(() => profile?.name ?? profile?.email ?? 'User', [profile])
 
   const loadDashboard = useCallback(async () => {
     if (!apiToken) return
@@ -46,8 +49,10 @@ export function Dashboard() {
 
       setBalance(wallet?.balance ?? wallet?.credits ?? 0)
       setJobs(normalizeJobs(jobsPayload))
-    } catch (error) {
-      setErrorMessage(error.message || 'Could not load your dashboard data.')
+    } catch (err) {
+      setErrorMessage(
+        err instanceof Error ? err.message : 'Could not load your dashboard data.',
+      )
     } finally {
       setLoading(false)
     }
@@ -57,7 +62,8 @@ export function Dashboard() {
     loadDashboard()
   }, [loadDashboard])
 
-  const handlePurchase = async (credits) => {
+  const handlePurchase = async (credits: number) => {
+    if (!apiToken) return
     setPurchaseLoadingCredits(credits)
     setErrorMessage('')
 
@@ -68,29 +74,40 @@ export function Dashboard() {
         return
       }
       setErrorMessage('Checkout was created, but no redirect URL was provided by the backend.')
-    } catch (error) {
-      setErrorMessage(error.message || 'Could not start checkout right now.')
+    } catch (err) {
+      setErrorMessage(
+        err instanceof Error ? err.message : 'Could not start checkout right now.',
+      )
     } finally {
       setPurchaseLoadingCredits(null)
     }
   }
 
-  const handleUpload = async ({ file, requestedCuts }) => {
+  const handleUpload = async ({ file, requestedCuts }: UploadFormValues) => {
+    if (!apiToken) return
     setIsSubmittingUpload(true)
     setErrorMessage('')
 
     try {
       const job = await apiClient.upload.uploadVideo({ token: apiToken, file, requestedCuts })
-      const jobId = job?.id || job?.job_id
+      const jobId = job?.id ?? job?.job_id
       await loadDashboard()
       if (jobId) {
         navigate(`/jobs/${jobId}`)
       }
-    } catch (error) {
-      if (error instanceof ApiError && (error.status === 402 || error.data?.code === 'INSUFFICIENT_CREDITS')) {
-        setErrorMessage('You do not have enough credits for this request. Please buy more credits and try again.')
+    } catch (err) {
+      if (
+        err instanceof ApiError &&
+        (err.status === 402 ||
+          (err.data as Record<string, unknown> | null)?.code === 'INSUFFICIENT_CREDITS')
+      ) {
+        setErrorMessage(
+          'You do not have enough credits for this request. Please buy more credits and try again.',
+        )
       } else {
-        setErrorMessage(error.message || 'Could not submit your upload.')
+        setErrorMessage(
+          err instanceof Error ? err.message : 'Could not submit your upload.',
+        )
       }
     } finally {
       setIsSubmittingUpload(false)
@@ -109,7 +126,9 @@ export function Dashboard() {
 
       <section className="card">
         <h2>Purchase credits</h2>
-        <p className="inline-note">Complete checkout with Mercado Pago and credits will be added after payment confirmation.</p>
+        <p className="inline-note">
+          Complete checkout with Mercado Pago and credits will be added after payment confirmation.
+        </p>
         <div className="package-grid">
           {CREDIT_PACKAGES.map((item) => (
             <button

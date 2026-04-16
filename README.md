@@ -19,6 +19,7 @@ React + Vite frontend for a pay-per-cut video clipping product.
 ## Tech stack
 
 - React + Vite
+- TypeScript
 - Firebase Authentication
 - React Router
 - Plain CSS
@@ -56,6 +57,12 @@ npm run dev
 
 Then open `http://localhost:5173`.
 
+## Type checking
+
+```bash
+npm run typecheck
+```
+
 ## Build
 
 ```bash
@@ -66,4 +73,4 @@ npm run preview
 ## Notes
 
 - This MVP intentionally supports **video upload only** (no URL ingestion).
-- If backend payloads differ, adjust mappings in `src/api/client.js` and pages.
+- If backend payloads differ, adjust mappings in `src/api/client.ts` and pages.
