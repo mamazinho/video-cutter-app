@@ -202,7 +202,16 @@ export const apiClient = {
         ?? toStringOrUndefined(asObject?.key)
 
       if (!uploadUrl || !uploadId || !storageKey) {
-        throw new ApiError('Upload request response is missing required fields.', 500, payload)
+        const missingFields = [
+          !uploadUrl ? 'upload_url' : null,
+          !uploadId ? 'upload_id' : null,
+          !storageKey ? 'storage_key' : null,
+        ].filter(Boolean).join(', ')
+        throw new ApiError(
+          `Upload request response is missing required fields: ${missingFields}`,
+          500,
+          payload,
+        )
       }
 
       return {
