@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
 import { apiClient, ApiError } from '../api/client'
 import { auth, googleProvider, hasFirebaseConfig } from '../firebase'
-import { AuthContext } from './auth-context'
+import { AuthContext } from './AuthContextStore'
 
 const STORAGE_KEY = 'video-cutter-api-token'
 
