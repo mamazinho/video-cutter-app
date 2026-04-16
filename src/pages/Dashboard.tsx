@@ -20,6 +20,8 @@ function normalizeJobs(payload: JobsListResponse | null | undefined): Job[] {
   if (Array.isArray(payload)) return payload
   if ('items' in payload && Array.isArray(payload.items)) return payload.items ?? []
   if ('jobs' in payload && Array.isArray(payload.jobs)) return payload.jobs ?? []
+  if ('data' in payload && Array.isArray(payload.data)) return payload.data ?? []
+  if ('results' in payload && Array.isArray(payload.results)) return payload.results ?? []
   return []
 }
 
