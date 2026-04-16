@@ -12,6 +12,7 @@ function normalizeClips(jobPayload: JobResponse | null): Clip[] {
   if (!jobPayload) return []
   if (Array.isArray(jobPayload.clips)) return jobPayload.clips
   if (Array.isArray(jobPayload.outputs)) return jobPayload.outputs
+  if (Array.isArray(jobPayload.generated_clips)) return jobPayload.generated_clips
   return []
 }
 
@@ -29,7 +30,7 @@ export function JobDetail() {
 
     try {
       const payload = await apiClient.jobs.getById(apiToken, jobId)
-      setJob(payload?.job ?? payload)
+      setJob(payload?.job ?? payload?.data ?? payload)
       setError('')
     } catch (requestError) {
       setError(

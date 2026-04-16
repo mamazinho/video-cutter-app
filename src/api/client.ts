@@ -1,6 +1,28 @@
 import type { Clip, Job, UserProfile } from '../types'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '')
+const rawApiPrefix = import.meta.env.VITE_API_PREFIX
+const API_PREFIX = (rawApiPrefix === undefined ? '/api' : rawApiPrefix).replace(/\/+$/, '')
+
+function buildApiUrl(path: string): string {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  if (!API_PREFIX) {
+    return `${API_BASE_URL}${normalizedPath}`
+  }
+  return `${API_BASE_URL}${API_PREFIX}${normalizedPath}`
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value != null && typeof value === 'object' ? (value as Record<string, unknown>) : null
+}
+
+function toStringOrUndefined(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined
+}
+
+function toNumberOrUndefined(value: unknown): number | undefined {
+  return typeof value === 'number' ? value : undefined
+}
 
 export class ApiError extends Error {
   readonly status: number
@@ -52,14 +74,17 @@ export interface JobResponse {
   job_id?: string | number
   status?: string
   requested_cuts?: number
+  requestedCuts?: number
   clips?: Clip[]
   outputs?: Clip[]
+  generated_clips?: Clip[]
   job?: JobResponse
+  data?: JobResponse
 }
 
 export type JobsListResponse =
   | Job[]
-  | { items?: Job[]; jobs?: Job[] }
+  | { items?: Job[]; jobs?: Job[]; data?: Job[]; results?: Job[] }
 
 // --- Core fetch wrapper ---
 
@@ -77,7 +102,7 @@ async function request<T = unknown>(
     requestHeaders.set('Authorization', `Bearer ${token}`)
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     method,
     headers: requestHeaders,
     body: body instanceof FormData ? body : body != null ? JSON.stringify(body) : undefined,
@@ -90,8 +115,12 @@ async function request<T = unknown>(
 
   if (!response.ok) {
     const errorPayload = payload as Record<string, unknown> | null
+    const message = toStringOrUndefined(errorPayload?.detail)
+      ?? toStringOrUndefined(errorPayload?.message)
+      ?? toStringOrUndefined(errorPayload?.error)
+      ?? `Request failed with status ${response.status}`
     throw new ApiError(
-      (errorPayload?.message as string | undefined) ?? `Request failed with status ${response.status}`,
+      message,
       response.status,
       payload,
     )
@@ -104,35 +133,94 @@ async function request<T = unknown>(
 
 export const apiClient = {
   auth: {
-    bootstrap: (firebaseToken: string): Promise<BootstrapResponse> =>
-      request<BootstrapResponse>('/auth/firebase', {
+    async bootstrap(firebaseToken: string): Promise<BootstrapResponse> {
+      const payload = await request<BootstrapResponse>('/auth/firebase', {
         method: 'POST',
-        body: { firebase_token: firebaseToken },
-      }),
+        body: {
+          firebase_token: firebaseToken,
+          id_token: firebaseToken,
+          token: firebaseToken,
+        },
+      })
+      const asObject = asRecord(payload)
+      const accessToken = toStringOrUndefined(asObject?.access_token)
+        ?? toStringOrUndefined(asObject?.token)
+        ?? toStringOrUndefined(asObject?.jwt)
+      return { ...payload, access_token: accessToken }
+    },
   },
   wallet: {
-    getBalance: (token: string): Promise<WalletResponse> =>
-      request<WalletResponse>('/wallet/balance', { token }),
+    async getBalance(token: string): Promise<WalletResponse> {
+      const payload = await request<WalletResponse>('/wallet/balance', { token })
+      const asObject = asRecord(payload)
+      const balance = toNumberOrUndefined(asObject?.balance)
+        ?? toNumberOrUndefined(asObject?.credits)
+        ?? toNumberOrUndefined(asObject?.available_credits)
+        ?? toNumberOrUndefined(asObject?.credit_balance)
+      return { ...payload, balance }
+    },
   },
   billing: {
-    createCheckout: (token: string, credits: number): Promise<CheckoutResponse> =>
-      request<CheckoutResponse>('/billing/checkout', {
+    async createCheckout(token: string, credits: number): Promise<CheckoutResponse> {
+      const payload = await request<CheckoutResponse>('/billing/checkout', {
         method: 'POST',
         token,
-        body: { credits },
-      }),
+        body: { credits, quantity: credits },
+      })
+      const asObject = asRecord(payload)
+      const checkoutUrl = toStringOrUndefined(asObject?.checkout_url)
+        ?? toStringOrUndefined(asObject?.checkoutUrl)
+        ?? toStringOrUndefined(asObject?.init_point)
+        ?? toStringOrUndefined(asObject?.url)
+      return { ...payload, checkout_url: checkoutUrl }
+    },
   },
   upload: {
-    requestUploadUrl: (token: string, file: File): Promise<UploadRequestResponse> =>
-      request<UploadRequestResponse>('/uploads/request', {
+    async requestUploadUrl(token: string, file: File): Promise<UploadRequestResponse> {
+      const payload = await request<UploadRequestResponse>('/uploads/request', {
         method: 'POST',
         token,
         body: {
           filename: file.name,
           content_type: file.type || 'video/mp4',
+          contentType: file.type || 'video/mp4',
           size_bytes: file.size,
+          sizeBytes: file.size,
         },
-      }),
+      })
+
+      const asObject = asRecord(payload)
+      const uploadUrl = toStringOrUndefined(asObject?.upload_url)
+        ?? toStringOrUndefined(asObject?.uploadUrl)
+        ?? toStringOrUndefined(asObject?.signed_url)
+        ?? toStringOrUndefined(asObject?.url)
+      const uploadId = toStringOrUndefined(asObject?.upload_id)
+        ?? toStringOrUndefined(asObject?.uploadId)
+        ?? toStringOrUndefined(asObject?.id)
+      const storageKey = toStringOrUndefined(asObject?.storage_key)
+        ?? toStringOrUndefined(asObject?.storageKey)
+        ?? toStringOrUndefined(asObject?.key)
+
+      if (!uploadUrl || !uploadId || !storageKey) {
+        const missingFields = [
+          !uploadUrl ? 'upload_url' : null,
+          !uploadId ? 'upload_id' : null,
+          !storageKey ? 'storage_key' : null,
+        ].filter(Boolean).join(', ')
+        throw new ApiError(
+          `Upload request response is missing required fields: ${missingFields}`,
+          500,
+          payload,
+        )
+      }
+
+      return {
+        ...payload,
+        upload_url: uploadUrl,
+        upload_id: uploadId,
+        storage_key: storageKey,
+      }
+    },
     completeUpload: (
       token: string,
       uploadId: string,
@@ -141,7 +229,12 @@ export const apiClient = {
       request<UploadCompleteResponse>('/uploads/complete', {
         method: 'POST',
         token,
-        body: { upload_id: uploadId, storage_key: storageKey },
+        body: {
+          upload_id: uploadId,
+          uploadId,
+          storage_key: storageKey,
+          storageKey,
+        },
       }),
     async uploadVideo({
       token,
@@ -171,6 +264,7 @@ export const apiClient = {
 
       return apiClient.jobs.create(token, {
         requested_cuts: requestedCuts,
+        requestedCuts,
         source_type: 'upload',
         upload_id: completion.upload_id ?? uploadResponse.upload_id,
       })
