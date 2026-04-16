@@ -1,0 +1,188 @@
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+  position: sticky;
+  top: 0;
+}
+
+.brand {
+  color: #111827;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-links a {
+  color: #374151;
+  text-decoration: none;
+}
+
+.user-mini {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4b5563;
+  font-size: 0.875rem;
+}
+
+.page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.card,
+.hero-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.25rem;
+  background: #ffffff;
+}
+
+.hero-card h1 {
+  margin-top: 0;
+}
+
+.actions-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: 1px solid #111827;
+  background: #111827;
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 0.55rem 0.95rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #ffffff;
+  color: #111827;
+}
+
+.btn-google {
+  width: 100%;
+}
+
+.btn-link {
+  background: #ffffff;
+  color: #111827;
+}
+
+.inline-note {
+  color: #6b7280;
+  margin: 0;
+}
+
+.error-text {
+  color: #b91c1c;
+}
+
+.credits-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.package-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.package-card {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #f9fafb;
+  padding: 0.85rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  cursor: pointer;
+}
+
+.field-label {
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+input {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.55rem;
+}
+
+.jobs-list,
+.clip-grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.job-item,
+.clip-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.job-title,
+.clip-title {
+  margin: 0;
+  font-weight: 600;
+  color: #111827;
+}
+
+.narrow-card {
+  max-width: 420px;
+}
+
+.loading-state {
+  max-width: 860px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+}
+
+@media (max-width: 700px) {
+  .app-header {
+    flex-wrap: wrap;
+  }
+
+  .job-item,
+  .clip-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
