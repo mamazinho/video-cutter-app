@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>autocut</title>
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="container">
+        <a href="/" class="brand">autocut</a>
+      </div>
+    </header>
+    <main class="container">{% block content %}{% endblock %}</main>
+    <footer class="footer">
+      <div class="container">© {% now "Y" %} autocut · cortes automáticos de vídeo</div>
+    </footer>
+  </body>
+</html>

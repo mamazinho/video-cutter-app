@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h1>Pedido {{ order.reference }}</h1>
+  <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+  <p><strong>Email:</strong> {{ order.email }}</p>
+  <p><strong>Quantidade de cortes:</strong> {{ order.requested_cuts }}</p>
+  <p><strong>Total:</strong> R$ {{ order.amount_brl }}</p>
+
+  {% if order.status == "pending_payment" %}
+    <form method="post" action="{% url 'simulate-payment' reference=order.reference %}">
+      {% csrf_token %}
+      <button type="submit">[DEV] Simular pagamento aprovado</button>
+    </form>
+  {% endif %}
+
+  {% if order.status == "completed" and order.clips.exists %}
+    <h2>Links dos cortes</h2>
+    <ul>
+      {% for clip in order.clips.all %}
+        <li><a href="{{ clip.signed_url }}" target="_blank" rel="noopener">Corte {{ clip.clip_index }}</a> (expira em {{ clip.signed_url_expires_at }})</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if order.failure_reason %}
+    <p class="error"><strong>Falha:</strong> {{ order.failure_reason }}</p>
+  {% endif %}
+</section>
+{% endblock %}
