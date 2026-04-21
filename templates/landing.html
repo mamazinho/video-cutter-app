@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h1>Corte seu vídeo em minutos</h1>
+  <p>Informe seu e-mail, envie o vídeo, escolha quantos cortes deseja e pague. Cada corte custa R$ 10.</p>
+
+  <form method="post" enctype="multipart/form-data" class="form">
+    {% csrf_token %}
+    {% for field in form %}
+      <label>{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<small class="error">{{ field.errors|striptags }}</small>{% endif %}
+    {% endfor %}
+    <button type="submit">Continuar para pagamento</button>
+  </form>
+</section>
+{% endblock %}
